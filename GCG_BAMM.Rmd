@@ -1,0 +1,134 @@
+
+
+Now we are going to work with BAMM
+
+```{r}
+library(BAMMtools)
+library(coda)
+
+## load data
+mytree <- read.tree("tree.tree")
+mcmcout <- read.csv("mcmc_out.txt")
+
+## create edata
+edata <- getEventData(mytree, eventdata = "event_data.txt", burnin=0.15)
+
+
+#### Check convergence
+plot(mcmcout$logLik ~ mcmcout$generation)
+
+burnstart <- floor(0.15 * nrow(mcmcout))
+postburn <- mcmcout[burnstart:nrow(mcmcout), ]
+
+effectiveSize(postburn$N_shifts)
+effectiveSize(postburn$logLik)
+
+
+
+### Shift probabilities
+shift_probs <- summary(edata)
+shift_probs
+
+
+### Bayes factors
+bfmat <- computeBayesFactors(postburn, expectedNumberOfShifts=1, burnin=0.15)
+bfmat
+
+#### PLOT CREDIBLE SHIFTS
+css <- credibleShiftSet(edata, expectedNumberOfShifts=1, threshold=5, set.limit = 0.95)
+css
+plot.credibleshiftset(css,spex = "netdiv")
+
+
+### PLOT BEST SHIFT
+par(mfrow=c(1,1))
+best <- getBestShiftConfiguration(edata, expectedNumberOfShifts=1)
+best
+plot.bammdata(best, lwd = 2,spex = "netdiv",label=T,cex=0.2)
+axisPhylo()
+addBAMMshifts(best, cex=3)
+best$eventData
+
+### RATE through time
+st <- max(branching.times(mytree))
+plotRateThroughTime(edata, intervalCol="red", avgCol="red", start.time=st, ylim=c(0,1), cex.axis=2,ratetype='netdiv')
+
+plotRateThroughTime(edata, intervalCol="blue", avgCol="blue", node=2606, ylim=c(0,1),cex.axis=1.5)
+text(x=30, y= 0.8, label="Schoenoxiphium sl clade", font=4, cex=1.0, pos=4)
+
+plotRateThroughTime(edata, intervalCol="green", avgCol="green", node=2178, ylim=c(0,1),cex.axis=1.5)
+text(x=30, y= 0.8, label="most Vignea", font=4, cex=1.0, pos=4)
+
+plotRateThroughTime(edata, intervalCol="orange", avgCol="orange", node=1924, ylim=c(0,1),cex.axis=1.5)
+text(x=30, y= 0.8, label="Aulocystis sl", font=4, cex=1.0, pos=4)
+
+plotRateThroughTime(edata, intervalCol="yellow", avgCol="yellow", node=1836, ylim=c(0,1),cex.axis=1.5)
+text(x=30, y= 0.8, label="Paniceae sl", font=4, cex=1.0, pos=4)
+
+plotRateThroughTime(edata, intervalCol="darkred", avgCol="darkred", node=1756, ylim=c(0,1),cex.axis=1.5)
+text(x=30, y= 0.8, label="Racemosae", font=4, cex=1.0, pos=4)
+
+plotRateThroughTime(edata, intervalCol="darkblue", avgCol="darkblue", node=2061, ylim=c(0,1),cex.axis=1.5)
+text(x=30, y= 0.8, label="Acrocystis", font=4, cex=1.0, pos=4)
+
+plotRateThroughTime(edata, intervalCol="darkgreen", avgCol="darkgreen", node=2469, ylim=c(0,1),cex.axis=1.5)
+text(x=30, y= 0.8, label="Uncinea", font=4, cex=1.0, pos=4)
+
+plotRateThroughTime(edata, intervalCol="darkorange", avgCol="darkorange", node=1637, ylim=c(0,1),cex.axis=1.5)
+text(x=30, y= 0.8, label="Spirostachyae NZ", font=4, cex=1.0, pos=4)
+
+plotRateThroughTime(edata, intervalCol="yellow2", avgCol="yellow2", node=1358, ylim=c(0,1.5),cex.axis=1.5)
+text(x=30, y= 0.8, label="Phacocystis", font=4, cex=1.0, pos=4)
+
+
+plotRateThroughTime(edata, intervalCol="indianred", avgCol="indianred", node=1479, ylim=c(0,1),cex.axis=1.5)
+text(x=30, y= 0.8, label="Porocystis sl", font=4, cex=1.0, pos=4)
+
+plotRateThroughTime(edata, intervalCol="lightblue", avgCol="lightblue", node=2183, ylim=c(0,1.5),cex.axis=1.5)
+text(x=30, y= 0.8, label="Ovales", font=4, cex=1.0, pos=4)
+
+plotRateThroughTime(edata, intervalCol="grey", avgCol="grey", node=1717, ylim=c(0,1),cex.axis=1.5)
+text(x=30, y= 0.8, label="Ceratocystis", font=4, cex=1.0, pos=4)
+
+
+#######################################################
+## UNTIL HERE. DON'T SEE NEXT CODES
+########################################################
+
+###Marginal probabilities of all nodes
+
+marg_probs <- marginalShiftProbsTree(edata)
+plot.phylo(marg_probs, cex = 0.3)
+
+plot(mytree,use.edge.length=T, label.offset=0.2, no.margin=TRUE, cex=0.3)
+co<-c("blue","white")
+nodelabels(pie=marg_probs$edge.length, piecol = c("blue","white"), cex=0.3)
+
+library(caper)
+clade.members(1756, mytree, tip.labels = T, include.nodes=F)
+
+clade.members(310, mytree, tip.labels = T, include.nodes=F)
+clade.members(149, mytree, tip.labels = T, include.nodes=F)
+clade.members(152, mytree, tip.labels = T, include.nodes=F)
+clade.members(311, mytree, tip.labels = T, include.nodes=F)
+clade.members(162, mytree, tip.labels = T, include.nodes=F)
+
+
+
+###########################################################################
+###branch priors
+branch_priors <- getBranchShiftPriors(mytree, expectedNumberOfShifts = 3)
+branch_priors
+plot(mytree,use.edge.length=T, label.offset=0.2, no.margin=TRUE, cex=0.3)
+co<-c("blue","white")
+nodelabels(pie=branch_priors$edge.length, piecol = c("blue","white"), cex=0.3)
+
+#mo <- marginalOddsRatioBranches(edata, branch_priors)
+
+
+#other approach
+msc_tree <- maximumShiftCredibility(edata)
+plot(edata)
+addBAMMshifts(edata, method="phylogram", index=msc_tree$sampleindex)
+```
+
